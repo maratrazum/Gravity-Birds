@@ -508,29 +508,63 @@ function playWinSound() {
   setTimeout(() => playTone(440, 0.12, "triangle", 0.12, 560), 80);
 }
 
+function playDrum(freq, duration, volume = 0.18) {
+  const audio = ensureAudio();
+  if (!audio) return;
+  if (audio.ctx.state === "suspended") audio.ctx.resume();
+  const osc = audio.ctx.createOscillator();
+  const gain = audio.ctx.createGain();
+  osc.type = "triangle";
+  osc.frequency.setValueAtTime(freq, audio.ctx.currentTime);
+  osc.frequency.exponentialRampToValueAtTime(Math.max(40, freq * 0.45), audio.ctx.currentTime + duration);
+  gain.gain.setValueAtTime(volume, audio.ctx.currentTime);
+  gain.gain.exponentialRampToValueAtTime(0.001, audio.ctx.currentTime + duration);
+  osc.connect(gain);
+  gain.connect(audio.master);
+  osc.start();
+  osc.stop(audio.ctx.currentTime + duration);
+}
+
 function updateAmbientAudio(dt) {
   const audio = state.audio;
   if (!audio || state.mode !== "game" || !state.world || state.world.outcome) return;
   audio.humTimer -= dt;
   audio.musicTimer -= dt;
   if (audio.humTimer <= 0) {
-    audio.humTimer = 3.4;
-    playTone(82 + state.world.level.gravity * 0.05, 1.8, "sine", 0.08, 70 + state.world.level.gravity * 0.03);
+    audio.humTimer = 2.8;
+    const drone = [82, 92, 98, 110, 123, 131, 147, 165][(state.world.level.id - 1) % 8];
+    playTone(drone, 2.2, "sine", 0.11, drone * 0.92);
+    playTone(drone * 0.5, 2.4, "triangle", 0.07, drone * 0.48);
   }
   if (audio.musicTimer > 0) return;
-  const roots = [220, 196, 247, 175, 147];
+  const roots = [196, 220, 174.61, 246.94, 164.81, 233.08, 207.65, 185];
   const root = roots[(state.world.level.id - 1) % roots.length];
   const patterns = [
-    [1, 1.25, 1.5, 2, 1.5, 1.25, 1.12, 1.5],
-    [1, 1.125, 1.5, 1.125, 1.68, 1.5, 1.125, 2],
-    [1, 1.2, 1.6, 1.2, 1.4, 1.8, 1.6, 1.2],
+    [1, 1.125, 1.333, 1.5, 2, 1.5, 1.333, 1.125],
+    [1, 1.333, 1.5, 2, 1.5, 1.333, 1.125, 1],
+    [1, 1.125, 1.5, 1.333, 2, 1.5, 1.125, 1],
+    [1, 1.5, 1.333, 1.125, 2, 1.333, 1.5, 1.125],
+  ];
+  const ornaments = [
+    [2, 1.5, 1.333, 1.5],
+    [1.5, 1.125, 1.333, 1.125],
+    [2, 1.333, 1.5, 1.333],
   ];
   const pattern = patterns[(state.world.level.id - 1) % patterns.length];
+  const ornament = ornaments[(state.world.level.id - 1) % ornaments.length];
   const freq = root * pattern[audio.musicStep % pattern.length];
-  playTone(freq, 0.48, "triangle", 0.15, freq * 0.98);
-  playTone(freq * 0.5, 0.7, "sine", 0.11, freq * 0.48);
+  const accent = audio.musicStep % 4 === 0;
+  playTone(freq, accent ? 0.42 : 0.32, accent ? "sawtooth" : "triangle", accent ? 0.18 : 0.13, freq * 0.97);
+  playTone(freq * 0.5, 0.78, "sine", 0.085, freq * 0.49);
+  if (accent) {
+    const accentFreq = root * ornament[(audio.musicStep / 2) % ornament.length | 0];
+    setTimeout(() => playTone(accentFreq, 0.18, "triangle", 0.09, accentFreq * 0.99), 110);
+    playDrum(96 + (state.world.level.id % 3) * 14, 0.18, 0.12);
+  } else if (audio.musicStep % 2 === 1) {
+    playDrum(132, 0.1, 0.06);
+  }
   audio.musicStep += 1;
-  audio.musicTimer = 0.52;
+  audio.musicTimer = accent ? 0.56 : 0.34;
 }
 
 function roundRect(context, x, y, w, h, r) {
