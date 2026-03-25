@@ -335,7 +335,7 @@ h1 {
 
 .level-grid {
   display: grid;
-  grid-template-columns: repeat(5, minmax(0, 1fr));
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 12px;
   align-self: start;
 }
@@ -410,7 +410,125 @@ h1 {
   width: 48px;
   height: 48px;
   border-radius: 50%;
-  box-shadow: inset -10px -10px 0 rgba(0, 0, 0, 0.12);
+  position: relative;
+  overflow: visible;
+  box-shadow: inset -10px -10px 0 rgba(0, 0, 0, 0.12), 0 0 0 1px rgba(255,255,255,0.08);
+}
+
+.level-card .orb::before,
+.level-card .orb::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  pointer-events: none;
+}
+
+.orb-moon {
+  background:
+    radial-gradient(circle at 32% 34%, rgba(255,255,255,0.7) 0 6px, transparent 7px),
+    radial-gradient(circle at 62% 62%, rgba(126,117,106,0.55) 0 7px, transparent 8px),
+    radial-gradient(circle at 64% 26%, rgba(145,133,118,0.45) 0 5px, transparent 6px),
+    radial-gradient(circle at 30% 30%, #faf0d6 0%, #d8c3a2 58%, #8d7760 100%);
+}
+
+.orb-mars {
+  background:
+    radial-gradient(circle at 36% 26%, rgba(255,214,161,0.35) 0 10px, transparent 11px),
+    radial-gradient(circle at 58% 70%, rgba(119,54,34,0.42) 0 9px, transparent 10px),
+    linear-gradient(160deg, #f5be8b 0%, #bf5b36 52%, #7f2f1b 100%);
+}
+
+.orb-earth {
+  background:
+    radial-gradient(circle at 35% 35%, rgba(255,255,255,0.92) 0 7px, transparent 8px),
+    radial-gradient(circle at 56% 66%, rgba(68,169,95,0.95) 0 10px, transparent 11px),
+    radial-gradient(circle at 42% 40%, rgba(46,124,198,0.92) 0 100%, transparent 0),
+    linear-gradient(160deg, #9fe3ff 0%, #2d89db 48%, #173f88 100%);
+}
+
+.orb-earth::after {
+  inset: 6px 5px 12px 11px;
+  background:
+    radial-gradient(circle at 22% 38%, rgba(79,178,102,0.9) 0 7px, transparent 8px),
+    radial-gradient(circle at 70% 58%, rgba(110,188,96,0.9) 0 6px, transparent 7px),
+    radial-gradient(circle at 58% 24%, rgba(255,255,255,0.72) 0 5px, transparent 6px);
+}
+
+.orb-mercury {
+  background:
+    radial-gradient(circle at 36% 34%, rgba(240,226,197,0.45) 0 6px, transparent 7px),
+    radial-gradient(circle at 62% 68%, rgba(112,99,88,0.42) 0 8px, transparent 9px),
+    linear-gradient(150deg, #e7d3b1 0%, #b39275 52%, #665243 100%);
+}
+
+.orb-jupiter {
+  background:
+    linear-gradient(180deg,
+      #f4dbc2 0 12%,
+      #d7a278 12% 24%,
+      #f0d4bb 24% 36%,
+      #b97858 36% 48%,
+      #efcfaa 48% 60%,
+      #c58b62 60% 72%,
+      #f3d9b8 72% 84%,
+      #9d6548 84% 100%);
+}
+
+.orb-jupiter::after {
+  inset: 23px 8px 13px 20px;
+  border-radius: 999px;
+  background: rgba(188, 92, 58, 0.7);
+  filter: blur(0.2px);
+}
+
+.orb-venus {
+  background:
+    radial-gradient(circle at 26% 30%, rgba(255,242,197,0.45) 0 10px, transparent 11px),
+    linear-gradient(155deg, #f6e0b8 0%, #d5a46d 40%, #aa6f44 72%, #7f4a2e 100%);
+}
+
+.orb-venus::after {
+  inset: 8px;
+  background:
+    linear-gradient(20deg, transparent 0 20%, rgba(255,233,194,0.32) 20% 30%, transparent 30% 44%, rgba(198,120,74,0.28) 44% 55%, transparent 55% 100%);
+  opacity: 0.9;
+}
+
+.orb-saturn {
+  background:
+    linear-gradient(180deg, #f7e1ba 0 18%, #d6ad79 18% 36%, #f0d3a7 36% 54%, #c79263 54% 72%, #f2d8b7 72% 100%);
+}
+
+.orb-saturn::before {
+  inset: 19px -11px;
+  border-radius: 999px;
+  border: 3px solid rgba(224, 205, 164, 0.8);
+  transform: rotate(-18deg);
+}
+
+.orb-saturn::after {
+  inset: 22px -7px;
+  border-radius: 999px;
+  border: 1px solid rgba(123, 91, 61, 0.45);
+  transform: rotate(-18deg);
+}
+
+.orb-neptune {
+  background:
+    linear-gradient(180deg,
+      #d5ecff 0 10%,
+      #8ec0fb 10% 26%,
+      #4e8de1 26% 44%,
+      #77afe9 44% 62%,
+      #326dc0 62% 82%,
+      #1f4f9d 82% 100%);
+}
+
+.orb-neptune::after {
+  inset: 22px 10px 12px 20px;
+  border-radius: 999px;
+  background: rgba(218, 240, 255, 0.32);
 }
 
 .level-card .metric {

@@ -37,10 +37,10 @@ function ss(value) {
 }
 
 const BIRDS = {
-  red: { label: "Rood", color: "#dd594c", outline: "#7f231e", radius: ss(22), desc: "Basvogel voor nauwkeurige schoten." },
-  yellow: { label: "Chuck", color: "#f4c94f", outline: "#8b640b", radius: ss(20), desc: "Sneller dan de standaardvogel." },
-  blue: { label: "Blues", color: "#6cbef4", outline: "#21547f", radius: ss(18), desc: "Splitst in drie banen tijdens de vlucht." },
-  black: { label: "Bom", color: "#2f2c34", outline: "#b89253", radius: ss(24), desc: "Ontploft bij een harde botsing." },
+  red: { label: "Rode Vogel", color: "#dd594c", outline: "#7f231e", radius: ss(22), desc: "Basvogel voor nauwkeurige schoten." },
+  yellow: { label: "Gele Vogel", color: "#f4c94f", outline: "#8b640b", radius: ss(20), desc: "Sneller dan de standaardvogel." },
+  blue: { label: "Blauwe Drieling", color: "#6cbef4", outline: "#21547f", radius: ss(18), desc: "Splitst in drie banen tijdens de vlucht." },
+  black: { label: "Zwarte Bomvogel", color: "#2f2c34", outline: "#b89253", radius: ss(24), desc: "Ontploft bij een harde botsing." },
 };
 
 const STRINGS = {
@@ -86,7 +86,9 @@ const BASE_LEVELS = [
   {
     id: 1,
     planet: "Maan",
+    orbClass: "orb-moon",
     gravity: 280,
+    gravityMs2: 1.62,
     birds: ["red", "blue", "yellow", "black"],
     palette: { skyTop: "#0d1731", skyBottom: "#5f89bb", dust: "#e8d0ad" },
     blocks: [
@@ -105,7 +107,9 @@ const BASE_LEVELS = [
   {
     id: 2,
     planet: "Mars",
+    orbClass: "orb-mars",
     gravity: 420,
+    gravityMs2: 3.71,
     birds: ["red", "yellow", "blue", "black"],
     palette: { skyTop: "#4e2117", skyBottom: "#d97a49", dust: "#efc28f" },
     blocks: [
@@ -131,7 +135,9 @@ const BASE_LEVELS = [
   {
     id: 3,
     planet: "Aarde",
+    orbClass: "orb-earth",
     gravity: 560,
+    gravityMs2: 9.81,
     birds: ["red", "yellow", "blue", "black", "red"],
     palette: { skyTop: "#255c97", skyBottom: "#b2d8f2", dust: "#e8d6a2" },
     blocks: [
@@ -156,7 +162,9 @@ const BASE_LEVELS = [
   {
     id: 4,
     planet: "Mercurius",
+    orbClass: "orb-mercury",
     gravity: 690,
+    gravityMs2: 3.7,
     birds: ["yellow", "blue", "black", "yellow", "red"],
     palette: { skyTop: "#684130", skyBottom: "#eaad71", dust: "#f7d49d" },
     blocks: [
@@ -183,7 +191,9 @@ const BASE_LEVELS = [
   {
     id: 5,
     planet: "Jupiter",
+    orbClass: "orb-jupiter",
     gravity: 860,
+    gravityMs2: 24.79,
     birds: ["yellow", "blue", "black", "red", "yellow", "black"],
     palette: { skyTop: "#3d252d", skyBottom: "#c08a72", dust: "#f2d8b8" },
     blocks: [
@@ -207,6 +217,97 @@ const BASE_LEVELS = [
       { x: 1600, y: 684, helmet: false },
       { x: 1420, y: 584, helmet: true },
       { x: 1420, y: 398, helmet: true },
+    ],
+  },
+  {
+    id: 6,
+    planet: "Venus",
+    orbClass: "orb-venus",
+    gravity: 640,
+    gravityMs2: 8.87,
+    birds: ["red", "yellow", "blue", "black", "yellow"],
+    palette: { skyTop: "#6a3921", skyBottom: "#d89353", dust: "#f0c98f" },
+    blocks: [
+      ["stone", 1410, 910, 680, 28],
+      ["wood", 1220, 818, 38, 186],
+      ["wood", 1340, 818, 38, 186],
+      ["stone", 1460, 818, 42, 186],
+      ["wood", 1580, 818, 38, 186],
+      ["glass", 1282, 724, 166, 20],
+      ["stone", 1410, 720, 210, 28],
+      ["glass", 1538, 724, 166, 20],
+      ["wood", 1410, 610, 36, 170],
+      ["glass", 1410, 510, 250, 20],
+      ["stone", 1718, 770, 44, 300],
+    ],
+    pigs: [
+      { x: 1282, y: 688, helmet: false },
+      { x: 1538, y: 688, helmet: false },
+      { x: 1410, y: 472, helmet: true },
+    ],
+  },
+  {
+    id: 7,
+    planet: "Saturnus",
+    orbClass: "orb-saturn",
+    gravity: 760,
+    gravityMs2: 10.44,
+    birds: ["yellow", "blue", "black", "red", "yellow", "red"],
+    palette: { skyTop: "#413031", skyBottom: "#bc9a74", dust: "#efd2ad" },
+    blocks: [
+      ["stone", 1420, 912, 760, 28],
+      ["stone", 1160, 820, 40, 188],
+      ["wood", 1285, 820, 34, 188],
+      ["stone", 1420, 820, 40, 188],
+      ["wood", 1555, 820, 34, 188],
+      ["stone", 1680, 820, 40, 188],
+      ["glass", 1225, 724, 180, 20],
+      ["stone", 1420, 720, 220, 28],
+      ["glass", 1615, 724, 180, 20],
+      ["wood", 1326, 610, 34, 166],
+      ["wood", 1514, 610, 34, 166],
+      ["stone", 1420, 620, 320, 30],
+      ["glass", 1420, 510, 240, 20],
+      ["stone", 1420, 408, 50, 150],
+    ],
+    pigs: [
+      { x: 1225, y: 690, helmet: false },
+      { x: 1615, y: 690, helmet: false },
+      { x: 1420, y: 582, helmet: true },
+      { x: 1420, y: 370, helmet: true },
+    ],
+  },
+  {
+    id: 8,
+    planet: "Neptunus",
+    orbClass: "orb-neptune",
+    gravity: 800,
+    gravityMs2: 11.15,
+    birds: ["yellow", "blue", "black", "yellow", "black", "red"],
+    palette: { skyTop: "#102b56", skyBottom: "#4d8fd0", dust: "#86b3e5" },
+    blocks: [
+      ["stone", 1420, 914, 800, 28],
+      ["stone", 1130, 822, 42, 190],
+      ["wood", 1260, 822, 36, 190],
+      ["stone", 1390, 822, 42, 190],
+      ["wood", 1520, 822, 36, 190],
+      ["stone", 1650, 822, 42, 190],
+      ["glass", 1190, 726, 170, 20],
+      ["stone", 1325, 726, 150, 26],
+      ["glass", 1455, 726, 170, 20],
+      ["stone", 1590, 726, 150, 26],
+      ["stone", 1420, 628, 420, 32],
+      ["wood", 1295, 532, 34, 158],
+      ["stone", 1420, 532, 48, 158],
+      ["wood", 1545, 532, 34, 158],
+      ["glass", 1420, 430, 290, 18],
+    ],
+    pigs: [
+      { x: 1190, y: 692, helmet: false },
+      { x: 1455, y: 692, helmet: false },
+      { x: 1590, y: 692, helmet: false },
+      { x: 1420, y: 590, helmet: true },
+      { x: 1420, y: 392, helmet: true },
     ],
   },
 ];
@@ -297,10 +398,17 @@ function ensureAudio() {
   const AudioCtx = window.AudioContext || window.webkitAudioContext;
   if (!AudioCtx) return null;
   const ctxAudio = new AudioCtx();
+  const compressor = ctxAudio.createDynamicsCompressor();
   const master = ctxAudio.createGain();
-  master.gain.value = 0.55;
-  master.connect(ctxAudio.destination);
-  state.audio = { ctx: ctxAudio, master, humTimer: 0, musicTimer: 0, musicStep: 0 };
+  compressor.threshold.value = -24;
+  compressor.knee.value = 18;
+  compressor.ratio.value = 4;
+  compressor.attack.value = 0.003;
+  compressor.release.value = 0.2;
+  master.gain.value = 0.9;
+  master.connect(compressor);
+  compressor.connect(ctxAudio.destination);
+  state.audio = { ctx: ctxAudio, master, compressor, humTimer: 0, musicTimer: 0, musicStep: 0 };
   applyAudioSettings();
   return state.audio;
 }
@@ -317,11 +425,11 @@ function loadAudioSettings() {
   try {
     const raw = JSON.parse(localStorage.getItem(AUDIO_SETTINGS_KEY) || "{}");
     return {
-      volume: clamp(Number(raw.volume ?? 1.6), 0, 3),
+      volume: clamp(Number(raw.volume ?? 2.3), 0, 5),
       muted: Boolean(raw.muted),
     };
   } catch {
-    return { volume: 1.6, muted: false };
+    return { volume: 2.3, muted: false };
   }
 }
 
@@ -332,7 +440,7 @@ function saveAudioSettings(settings) {
 function applyAudioSettings() {
   const settings = loadAudioSettings();
   if (state.audio) {
-    state.audio.master.gain.value = settings.muted ? 0 : 0.3 * settings.volume;
+    state.audio.master.gain.value = settings.muted ? 0 : 0.42 * settings.volume;
   }
   volumeSlider.value = String(Math.round(settings.volume * 100));
   volumeValue.textContent = `${Math.round(settings.volume * 100)}%`;
@@ -382,8 +490,8 @@ function updateAmbientAudio(dt) {
   audio.humTimer -= dt;
   audio.musicTimer -= dt;
   if (audio.humTimer <= 0) {
-    audio.humTimer = 4.2;
-    playTone(82 + state.world.level.gravity * 0.05, 1.6, "sine", 0.012, 70 + state.world.level.gravity * 0.03);
+    audio.humTimer = 3.4;
+    playTone(82 + state.world.level.gravity * 0.05, 1.8, "sine", 0.08, 70 + state.world.level.gravity * 0.03);
   }
   if (audio.musicTimer > 0) return;
   const roots = [220, 196, 247, 175, 147];
@@ -395,10 +503,10 @@ function updateAmbientAudio(dt) {
   ];
   const pattern = patterns[(state.world.level.id - 1) % patterns.length];
   const freq = root * pattern[audio.musicStep % pattern.length];
-  playTone(freq, 0.42, "triangle", 0.028, freq * 0.98);
-  playTone(freq * 0.5, 0.56, "sine", 0.018, freq * 0.48);
+  playTone(freq, 0.48, "triangle", 0.15, freq * 0.98);
+  playTone(freq * 0.5, 0.7, "sine", 0.11, freq * 0.48);
   audio.musicStep += 1;
-  audio.musicTimer = 0.62;
+  audio.musicTimer = 0.52;
 }
 
 function roundRect(context, x, y, w, h, r) {
@@ -467,14 +575,14 @@ function rebuildLevelCards() {
         ${cleared ? `✓ ${STRINGS.ui.passed}` : `○ ${STRINGS.ui.notCleared}`}
       </div>
       <div class="level-top">
-        <div class="orb" style="background:${level.palette.dust}"></div>
+        <div class="orb ${level.orbClass}"></div>
         <div>
           <div class="eyebrow">${STRINGS.ui.level} ${index + 1}</div>
           <h3>${level.planet}</h3>
         </div>
       </div>
       <div class="metric">
-        <strong>g = ${level.gravity} px/s²</strong>
+        <strong>g = ${level.gravityMs2.toFixed(2)} m/s²</strong>
         <span>${STRINGS.ui.acceleration}</span>
       </div>
       <div class="metric">
@@ -661,7 +769,7 @@ function wakeStructures(world) {
 function refreshHud() {
   if (!state.world) return;
   hudLevel.textContent = state.world.level.planet;
-  hudGravity.textContent = `g = ${state.world.level.gravity} px/s², ${STRINGS.ui.acceleration}`;
+  hudGravity.textContent = `g = ${state.world.level.gravityMs2.toFixed(2)} m/s², ${STRINGS.ui.acceleration}`;
   hudStatus.textContent = state.world.status;
   birdStack.innerHTML = "";
   state.world.birdsQueue.forEach((birdType) => {
@@ -1765,7 +1873,7 @@ closeSettingsBtn.addEventListener("click", (event) => {
 
 volumeSlider.addEventListener("input", () => {
   const settings = loadAudioSettings();
-  settings.volume = clamp(Number(volumeSlider.value) / 100, 0, 3);
+  settings.volume = clamp(Number(volumeSlider.value) / 100, 0, 5);
   saveAudioSettings(settings);
   applyAudioSettings();
 });
