@@ -1,0 +1,107 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Gravity Birds</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <div class="app-shell">
+      <canvas id="gameCanvas"></canvas>
+
+      <section class="screen screen-menu" id="menuScreen">
+        <div class="hero">
+          <div class="hero-copy">
+            <p class="eyebrow">Gravity Birds</p>
+            <h1>Slingshot physics with planetary gravity</h1>
+            <p class="lede">
+              Большие конструкции, точная линия прицеливания, разные птицы и 5 уровней с собственной гравитацией.
+            </p>
+            <div class="hero-points">
+              <span>5 levels</span>
+              <span>4 bird types</span>
+              <span>planet gravity</span>
+              <span>destruction physics</span>
+            </div>
+            <button class="primary-btn" id="menuStartBtn">Play</button>
+          </div>
+          <div class="hero-preview">
+            <div class="preview-card preview-card-large">
+              <div class="planet planet-amber"></div>
+              <div class="mini-structure">
+                <span class="mini-base"></span>
+                <span class="mini-pillar left"></span>
+                <span class="mini-pillar right"></span>
+                <span class="mini-cap"></span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="birds-grid" id="birdsGrid"></div>
+      </section>
+
+      <section class="screen screen-levels hidden" id="levelScreen">
+        <div class="section-head">
+          <div>
+            <p class="eyebrow">Mission Select</p>
+            <h2>Choose a gravity field</h2>
+          </div>
+          <button class="ghost-btn" id="backToMenuBtn">Back</button>
+        </div>
+        <div class="level-grid" id="levelGrid"></div>
+      </section>
+
+      <section class="hud hidden" id="hud">
+        <div class="hud-card">
+          <span class="hud-label">Level</span>
+          <strong id="hudLevel">Moon</strong>
+          <span class="hud-meta" id="hudGravity">g = 280</span>
+        </div>
+        <div class="hud-card hud-center">
+          <span class="hud-label">Birds</span>
+          <div class="bird-stack" id="birdStack"></div>
+        </div>
+        <div class="hud-card hud-right">
+          <span class="hud-label">Status</span>
+          <strong id="hudStatus">Pull back and fire.</strong>
+          <div class="hud-actions">
+            <button class="ghost-btn ghost-small" id="settingsBtn">Sound</button>
+            <button class="ghost-btn ghost-small" id="restartBtn">Restart</button>
+          </div>
+        </div>
+      </section>
+
+      <section class="settings-panel hidden" id="settingsPanel">
+        <div class="settings-card">
+          <div class="settings-head">
+            <div>
+              <p class="eyebrow">Settings</p>
+              <h3>Audio</h3>
+            </div>
+            <button class="ghost-btn ghost-small" id="closeSettingsBtn">Close</button>
+          </div>
+          <label class="slider-wrap" for="volumeSlider">
+            <span>Volume</span>
+            <input type="range" id="volumeSlider" min="0" max="300" step="1" value="100" />
+            <strong id="volumeValue">100%</strong>
+          </label>
+          <button class="ghost-btn" id="muteBtn">Mute</button>
+        </div>
+      </section>
+
+      <section class="overlay hidden" id="overlay">
+        <div class="overlay-card">
+          <p class="eyebrow" id="overlayEyebrow">Victory</p>
+          <h3 id="overlayTitle">Level cleared</h3>
+          <p id="overlayText">Continue to the next level.</p>
+          <button class="primary-btn" id="overlayBtn">Continue</button>
+        </div>
+      </section>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/matter-js@0.20.0/build/matter.min.js"></script>
+    <script type="module" src="./app.js"></script>
+  </body>
+</html>

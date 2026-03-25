@@ -1,0 +1,2 @@
+Source archive: gravity_birds_2026-03-25_15-35-02_manual.tar.gz
+Reason: newest archived version without bird flight trail effects.
