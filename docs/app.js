@@ -1416,6 +1416,7 @@ function updateGroundDamage(world) {
     const touchingGround = block.body.position.y + block.h / 2 >= FLOOR_Y - 3;
     if (!touchingGround) {
       block.groundCooldown = 0;
+      block.groundPressTime = 0;
       return;
     }
     if (block.groundCooldown > 0) {
@@ -1423,6 +1424,14 @@ function updateGroundDamage(world) {
       return;
     }
     const impact = Math.abs(block.body.velocity.y) + Math.abs(block.body.angularVelocity) * 18;
+    if (block.material === "tnt") {
+      const pressForce = impact + Math.abs(block.body.velocity.x) * 0.8;
+      block.groundPressTime = pressForce > 4.8 ? (block.groundPressTime ?? 0) + world.lastDeltaMs / 1000 : 0;
+      if (pressForce > 10 || (block.groundPressTime ?? 0) > 0.18) {
+        explodeTnt(world, block);
+        return;
+      }
+    }
     if (impact > 8.5) {
       damageBlock(world, block, impact * 0.35);
       playImpactSound(impact * 0.5);
@@ -1468,6 +1477,10 @@ function updateBlockCrushing(world, dt) {
       pressure = Math.max(pressure, upper.body.mass / Math.max(lower.body.mass, 0.0001));
     });
     lower.squeezeTime = pressure > 0 ? (lower.squeezeTime ?? 0) + dt : 0;
+    if (lower.material === "tnt" && pressure > 0 && lower.squeezeTime > 0.22) {
+      explodeTnt(world, lower);
+      return;
+    }
     if (lower.squeezeTime > 1.15 && pressure > 0) {
       damageBlock(world, lower, dt * 1.55 * pressure);
     }
