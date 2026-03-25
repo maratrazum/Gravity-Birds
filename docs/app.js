@@ -3,6 +3,7 @@ const {
   World,
   Bodies,
   Body,
+  Constraint,
   Events,
   Composite,
   Sleeping,
@@ -77,9 +78,10 @@ const STRINGS = {
 };
 
 const MATERIALS = {
-  wood: { color: "#b97d4f", outline: "#6b3f20", density: 0.0011, friction: 0.8, restitution: 0.06, hp: 16 },
-  glass: { color: "#9fe7eb", outline: "#4a9bab", density: 0.0007, friction: 0.28, restitution: 0.04, hp: 8 },
-  stone: { color: "#8b97ab", outline: "#586171", density: 0.0022, friction: 0.95, restitution: 0.02, hp: 26 },
+  wood: { color: "#b97d4f", outline: "#6b3f20", density: 0.0012, friction: 0.86, restitution: 0.04, hp: 28 },
+  glass: { color: "#9fe7eb", outline: "#4a9bab", density: 0.0008, friction: 0.22, restitution: 0.02, hp: 12 },
+  stone: { color: "#8b97ab", outline: "#586171", density: 0.0026, friction: 0.98, restitution: 0.01, hp: 44 },
+  tnt: { color: "#d34b40", outline: "#6b1812", density: 0.0011, friction: 0.74, restitution: 0.02, hp: 7 },
 };
 
 const BASE_LEVELS = [
@@ -228,6 +230,7 @@ const BASE_LEVELS = [
     birds: ["red", "yellow", "blue", "black", "yellow"],
     palette: { skyTop: "#6a3921", skyBottom: "#d89353", dust: "#f0c98f" },
     blocks: [
+      ["tnt", 1188, 842, 48, 48],
       ["stone", 1410, 910, 680, 28],
       ["wood", 1220, 818, 38, 186],
       ["wood", 1340, 818, 38, 186],
@@ -245,6 +248,9 @@ const BASE_LEVELS = [
       { x: 1538, y: 688, helmet: false },
       { x: 1410, y: 472, helmet: true },
     ],
+    levers: [
+      { x: 1188, y: 892, w: 230, h: 18, material: "wood", pivotX: 1188, pivotY: 892 },
+    ],
   },
   {
     id: 7,
@@ -255,6 +261,7 @@ const BASE_LEVELS = [
     birds: ["yellow", "blue", "black", "red", "yellow", "red"],
     palette: { skyTop: "#413031", skyBottom: "#bc9a74", dust: "#efd2ad" },
     blocks: [
+      ["tnt", 1608, 682, 46, 46],
       ["stone", 1420, 912, 760, 28],
       ["stone", 1160, 820, 40, 188],
       ["wood", 1285, 820, 34, 188],
@@ -276,6 +283,9 @@ const BASE_LEVELS = [
       { x: 1420, y: 582, helmet: true },
       { x: 1420, y: 370, helmet: true },
     ],
+    levers: [
+      { x: 1608, y: 892, w: 250, h: 18, material: "stone", pivotX: 1608, pivotY: 892 },
+    ],
   },
   {
     id: 8,
@@ -286,6 +296,8 @@ const BASE_LEVELS = [
     birds: ["yellow", "blue", "black", "yellow", "black", "red"],
     palette: { skyTop: "#102b56", skyBottom: "#4d8fd0", dust: "#86b3e5" },
     blocks: [
+      ["tnt", 1322, 690, 46, 46],
+      ["tnt", 1518, 690, 46, 46],
       ["stone", 1420, 914, 800, 28],
       ["stone", 1130, 822, 42, 190],
       ["wood", 1260, 822, 36, 190],
@@ -309,6 +321,9 @@ const BASE_LEVELS = [
       { x: 1420, y: 590, helmet: true },
       { x: 1420, y: 392, helmet: true },
     ],
+    levers: [
+      { x: 1420, y: 890, w: 320, h: 18, material: "wood", pivotX: 1420, pivotY: 890 },
+    ],
   },
 ];
 
@@ -317,6 +332,15 @@ const LEVELS = BASE_LEVELS.map((level) => ({
   gravity: ss(level.gravity),
   blocks: level.blocks.map(([material, x, y, w, h]) => [material, sx(x), sy(y), Math.max(12, sx(w)), Math.max(12, sy(h))]),
   pigs: level.pigs.map((pig) => ({ ...pig, x: sx(pig.x), y: sy(pig.y) })),
+  levers: (level.levers ?? []).map((lever) => ({
+    ...lever,
+    x: sx(lever.x),
+    y: sy(lever.y),
+    w: sx(lever.w),
+    h: sy(lever.h),
+    pivotX: sx(lever.pivotX),
+    pivotY: sy(lever.pivotY),
+  })),
 }));
 
 const canvas = document.getElementById("gameCanvas");
@@ -647,9 +671,48 @@ function createBlockEntity(material, x, y, w, h, index) {
     w,
     h,
     hp: mat.hp,
+    isLever: false,
     removed: false,
     renderX: x,
     renderY: y,
+    renderAngle: 0,
+  };
+  body.plugin.entity = entity;
+  return entity;
+}
+
+function createLeverEntity(config, index) {
+  const mat = MATERIALS[config.material];
+  const body = Bodies.rectangle(config.x, config.y, config.w, config.h, {
+    chamfer: { radius: 6 },
+    friction: mat.friction,
+    restitution: 0.01,
+    density: mat.density * 1.2,
+    frictionAir: 0.003,
+    sleepThreshold: 18,
+    label: `lever:${index}`,
+  });
+  const pivot = Constraint.create({
+    pointA: { x: config.pivotX, y: config.pivotY },
+    bodyB: body,
+    pointB: { x: 0, y: 0 },
+    length: 0,
+    stiffness: 1,
+    damping: 0.08,
+  });
+  const entity = {
+    kind: "block",
+    id: `lever-${index}`,
+    material: config.material,
+    body,
+    w: config.w,
+    h: config.h,
+    hp: mat.hp * 1.6,
+    isLever: true,
+    pivot,
+    removed: false,
+    renderX: config.x,
+    renderY: config.y,
     renderAngle: 0,
   };
   body.plugin.entity = entity;
@@ -713,11 +776,19 @@ function createWorld(levelIndex) {
   const ground = createGround();
   const bounds = createBounds();
   const blocks = level.blocks.map(([material, x, y, w, h], index) => createBlockEntity(material, x, y, w, h, index));
+  const levers = level.levers.map((lever, index) => createLeverEntity(lever, index));
   const pigs = level.pigs.map((pig, index) => createPigEntity(pig.x, pig.y, pig.helmet, index));
 
-  World.add(engine.world, [ground, ...bounds, ...blocks.map((item) => item.body), ...pigs.map((item) => item.body)]);
+  World.add(engine.world, [
+    ground,
+    ...bounds,
+    ...blocks.map((item) => item.body),
+    ...levers.map((item) => item.body),
+    ...levers.map((item) => item.pivot),
+    ...pigs.map((item) => item.body),
+  ]);
 
-  blocks.forEach((block) => {
+  [...blocks, ...levers].forEach((block) => {
     Body.setVelocity(block.body, { x: 0, y: 0 });
     Body.setAngularVelocity(block.body, 0);
     Sleeping.set(block.body, true);
@@ -733,7 +804,7 @@ function createWorld(levelIndex) {
     level,
     ground,
     bounds,
-    blocks,
+    blocks: [...blocks, ...levers],
     pigs,
     birdsQueue: [...level.birds],
     activeBird: null,
@@ -823,10 +894,48 @@ function spawnBurst(world, x, y, color, count = 10) {
 function removeBlock(world, entity) {
   if (!entity || entity.removed) return;
   entity.removed = true;
+  if (entity.pivot) Composite.remove(world.engine.world, entity.pivot);
   Composite.remove(world.engine.world, entity.body);
   spawnDebris(world, entity.body.position.x, entity.body.position.y, MATERIALS[entity.material].color, 2);
   spawnBurst(world, entity.body.position.x, entity.body.position.y, MATERIALS[entity.material].color, 6);
   playImpactSound(4);
+}
+
+function explodeTnt(world, entity) {
+  if (!entity || entity.removed) return;
+  entity.removed = true;
+  if (entity.pivot) Composite.remove(world.engine.world, entity.pivot);
+  Composite.remove(world.engine.world, entity.body);
+  spawnBurst(world, entity.body.position.x, entity.body.position.y, "#ffcf75", 18);
+  spawnDebris(world, entity.body.position.x, entity.body.position.y, "#ff914d", 14);
+  world.blocks.forEach((block) => {
+    if (block.removed) return;
+    const dx = block.body.position.x - entity.body.position.x;
+    const dy = block.body.position.y - entity.body.position.y;
+    const dist = Math.hypot(dx, dy);
+    if (dist > 210) return;
+    const impact = 1 - dist / 210;
+    const dir = normalize({ x: dx || 1, y: dy || -0.2 });
+    Body.applyForce(block.body, block.body.position, {
+      x: dir.x * 0.028 * impact,
+      y: dir.y * 0.028 * impact,
+    });
+    if (block.material !== "tnt") damageBlock(world, block, 18 * impact);
+  });
+  world.pigs.forEach((pig) => {
+    if (pig.removed) return;
+    const dx = pig.body.position.x - entity.body.position.x;
+    const dy = pig.body.position.y - entity.body.position.y;
+    const dist = Math.hypot(dx, dy);
+    if (dist > 220) return;
+    const impact = 1 - dist / 220;
+    Body.applyForce(pig.body, pig.body.position, {
+      x: dx * 0.00022 * impact,
+      y: dy * 0.00022 * impact,
+    });
+    damagePig(world, pig, 2.5 * impact);
+  });
+  playImpactSound(12);
 }
 
 function removePig(world, entity) {
@@ -845,7 +954,10 @@ function getEntity(body) {
 function damageBlock(world, entity, amount) {
   if (!entity || entity.removed) return;
   entity.hp -= amount;
-  if (entity.hp <= 0) removeBlock(world, entity);
+  if (entity.hp <= 0) {
+    if (entity.material === "tnt") explodeTnt(world, entity);
+    else removeBlock(world, entity);
+  }
 }
 
 function damagePig(world, entity, amount) {
@@ -947,7 +1059,7 @@ function handleCollisionPair(world, pair) {
 
   if (bird && other?.kind === "pig") {
     wakeStructures(world);
-    damagePig(world, other, 10);
+    damagePig(world, other, 6.8);
     bird.impact = true;
     playImpactSound(5);
     return;
@@ -956,13 +1068,13 @@ function handleCollisionPair(world, pair) {
   if (bird && other?.kind === "block") {
     wakeStructures(world);
     const speed = length(bird.body.velocity);
-    const hitStrength = speed * (bird.type === "yellow" ? 1.45 : bird.type === "black" ? 2 : bird.type === "red" ? 1.3 : 1.1);
-    damageBlock(world, other, hitStrength * 0.95);
+    const hitStrength = speed * (bird.type === "yellow" ? 1.28 : bird.type === "black" ? 1.75 : bird.type === "red" ? 1.12 : 0.96);
+    damageBlock(world, other, hitStrength * 0.52);
 
     const direction = normalize(sub(other.body.position, bird.body.position));
     Body.applyForce(other.body, other.body.position, {
-      x: direction.x * 0.02 * (bird.type === "black" ? 1.75 : bird.type === "red" ? 1.25 : 1),
-      y: direction.y * 0.02 * (bird.type === "black" ? 1.75 : bird.type === "red" ? 1.25 : 1),
+      x: direction.x * 0.013 * (bird.type === "black" ? 1.55 : bird.type === "red" ? 1.18 : 1),
+      y: direction.y * 0.013 * (bird.type === "black" ? 1.55 : bird.type === "red" ? 1.18 : 1),
     });
     bird.impact = true;
     playImpactSound(hitStrength);
@@ -982,9 +1094,9 @@ function handleCollisionPair(world, pair) {
 
   if (aEntity?.kind === "block" && bEntity?.kind === "block") {
     const speed = pair.collision?.depth ? Math.abs(pair.bodyA.speed - pair.bodyB.speed) : 0;
-    if (speed > 2.2) {
-      damageBlock(world, aEntity, speed * 0.1);
-      damageBlock(world, bEntity, speed * 0.08);
+    if (speed > 3.8) {
+      damageBlock(world, aEntity, speed * 0.045);
+      damageBlock(world, bEntity, speed * 0.04);
     }
   }
 }
@@ -1271,10 +1383,10 @@ function updateGroundDamage(world) {
       return;
     }
     const impact = Math.abs(block.body.velocity.y) + Math.abs(block.body.angularVelocity) * 18;
-    if (impact > 5.5) {
-      damageBlock(world, block, impact * 0.9);
+    if (impact > 8.5) {
+      damageBlock(world, block, impact * 0.35);
       playImpactSound(impact * 0.5);
-      block.groundCooldown = 8;
+      block.groundCooldown = 12;
     }
   });
 }
@@ -1295,7 +1407,7 @@ function updatePigCrushing(world, dt) {
       pressed = true;
     });
     pig.crushTime = pressed ? (pig.crushTime ?? 0) + dt : 0;
-    if (pig.crushTime > 0.9) damagePig(world, pig, dt * 6);
+    if (pig.crushTime > 1.15) damagePig(world, pig, dt * 4.2);
   });
 }
 
@@ -1316,8 +1428,8 @@ function updateBlockCrushing(world, dt) {
       pressure = Math.max(pressure, upper.body.mass / Math.max(lower.body.mass, 0.0001));
     });
     lower.squeezeTime = pressure > 0 ? (lower.squeezeTime ?? 0) + dt : 0;
-    if (lower.squeezeTime > 0.8 && pressure > 0) {
-      damageBlock(world, lower, dt * 2.8 * pressure);
+    if (lower.squeezeTime > 1.15 && pressure > 0) {
+      damageBlock(world, lower, dt * 1.55 * pressure);
     }
   });
 }
@@ -1630,6 +1742,20 @@ function drawBlock(entity) {
     ctx.moveTo(left + 10, top + 8);
     ctx.lineTo(left + entity.w - 10, top + entity.h - 8);
     ctx.stroke();
+  } else if (entity.material === "tnt") {
+    ctx.strokeStyle = "rgba(255,235,194,0.85)";
+    ctx.font = "700 13px 'Avenir Next'";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.fillStyle = "#ffe8b1";
+    ctx.fillText("TNT", 0, 0);
+    ctx.strokeStyle = "rgba(110,20,16,0.65)";
+    ctx.beginPath();
+    ctx.moveTo(left + 8, top + 8);
+    ctx.lineTo(left + entity.w - 8, top + entity.h - 8);
+    ctx.moveTo(left + entity.w - 8, top + 8);
+    ctx.lineTo(left + 8, top + entity.h - 8);
+    ctx.stroke();
   } else {
     ctx.strokeStyle = "rgba(255,255,255,0.18)";
     ctx.beginPath();
@@ -1638,6 +1764,16 @@ function drawBlock(entity) {
     ctx.moveTo(left + 16, top + entity.h * 0.66);
     ctx.lineTo(left + entity.w - 16, top + entity.h * 0.66);
     ctx.stroke();
+  }
+  if (entity.isLever) {
+    ctx.fillStyle = "#d9d2c1";
+    ctx.beginPath();
+    ctx.arc(0, 0, 7, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = "#63584d";
+    ctx.beginPath();
+    ctx.arc(0, 0, 3, 0, Math.PI * 2);
+    ctx.fill();
   }
   ctx.restore();
 }
