@@ -508,63 +508,29 @@ function playWinSound() {
   setTimeout(() => playTone(440, 0.12, "triangle", 0.12, 560), 80);
 }
 
-function playDrum(freq, duration, volume = 0.18) {
-  const audio = ensureAudio();
-  if (!audio) return;
-  if (audio.ctx.state === "suspended") audio.ctx.resume();
-  const osc = audio.ctx.createOscillator();
-  const gain = audio.ctx.createGain();
-  osc.type = "triangle";
-  osc.frequency.setValueAtTime(freq, audio.ctx.currentTime);
-  osc.frequency.exponentialRampToValueAtTime(Math.max(40, freq * 0.45), audio.ctx.currentTime + duration);
-  gain.gain.setValueAtTime(volume, audio.ctx.currentTime);
-  gain.gain.exponentialRampToValueAtTime(0.001, audio.ctx.currentTime + duration);
-  osc.connect(gain);
-  gain.connect(audio.master);
-  osc.start();
-  osc.stop(audio.ctx.currentTime + duration);
-}
-
 function updateAmbientAudio(dt) {
   const audio = state.audio;
   if (!audio || state.mode !== "game" || !state.world || state.world.outcome) return;
   audio.humTimer -= dt;
   audio.musicTimer -= dt;
   if (audio.humTimer <= 0) {
-    audio.humTimer = 2.8;
-    const drone = [82, 92, 98, 110, 123, 131, 147, 165][(state.world.level.id - 1) % 8];
-    playTone(drone, 2.2, "sine", 0.11, drone * 0.92);
-    playTone(drone * 0.5, 2.4, "triangle", 0.07, drone * 0.48);
+    audio.humTimer = 3.4;
+    playTone(82 + state.world.level.gravity * 0.05, 1.8, "sine", 0.08, 70 + state.world.level.gravity * 0.03);
   }
   if (audio.musicTimer > 0) return;
-  const roots = [196, 220, 174.61, 246.94, 164.81, 233.08, 207.65, 185];
+  const roots = [220, 196, 247, 175, 147];
   const root = roots[(state.world.level.id - 1) % roots.length];
   const patterns = [
-    [1, 1.125, 1.333, 1.5, 2, 1.5, 1.333, 1.125],
-    [1, 1.333, 1.5, 2, 1.5, 1.333, 1.125, 1],
-    [1, 1.125, 1.5, 1.333, 2, 1.5, 1.125, 1],
-    [1, 1.5, 1.333, 1.125, 2, 1.333, 1.5, 1.125],
-  ];
-  const ornaments = [
-    [2, 1.5, 1.333, 1.5],
-    [1.5, 1.125, 1.333, 1.125],
-    [2, 1.333, 1.5, 1.333],
+    [1, 1.25, 1.5, 2, 1.5, 1.25, 1.12, 1.5],
+    [1, 1.125, 1.5, 1.125, 1.68, 1.5, 1.125, 2],
+    [1, 1.2, 1.6, 1.2, 1.4, 1.8, 1.6, 1.2],
   ];
   const pattern = patterns[(state.world.level.id - 1) % patterns.length];
-  const ornament = ornaments[(state.world.level.id - 1) % ornaments.length];
   const freq = root * pattern[audio.musicStep % pattern.length];
-  const accent = audio.musicStep % 4 === 0;
-  playTone(freq, accent ? 0.42 : 0.32, accent ? "sawtooth" : "triangle", accent ? 0.18 : 0.13, freq * 0.97);
-  playTone(freq * 0.5, 0.78, "sine", 0.085, freq * 0.49);
-  if (accent) {
-    const accentFreq = root * ornament[(audio.musicStep / 2) % ornament.length | 0];
-    setTimeout(() => playTone(accentFreq, 0.18, "triangle", 0.09, accentFreq * 0.99), 110);
-    playDrum(96 + (state.world.level.id % 3) * 14, 0.18, 0.12);
-  } else if (audio.musicStep % 2 === 1) {
-    playDrum(132, 0.1, 0.06);
-  }
+  playTone(freq, 0.48, "triangle", 0.15, freq * 0.98);
+  playTone(freq * 0.5, 0.7, "sine", 0.11, freq * 0.48);
   audio.musicStep += 1;
-  audio.musicTimer = accent ? 0.56 : 0.34;
+  audio.musicTimer = 0.52;
 }
 
 function roundRect(context, x, y, w, h, r) {
@@ -951,10 +917,10 @@ function explodeTnt(world, entity) {
     const impact = 1 - dist / 210;
     const dir = normalize({ x: dx || 1, y: dy || -0.2 });
     Body.applyForce(block.body, block.body.position, {
-      x: dir.x * 0.028 * impact,
-      y: dir.y * 0.028 * impact,
+      x: dir.x * 0.016 * impact,
+      y: dir.y * 0.016 * impact,
     });
-    if (block.material !== "tnt") damageBlock(world, block, 18 * impact);
+    if (block.material !== "tnt") damageBlock(world, block, 11 * impact);
   });
   world.pigs.forEach((pig) => {
     if (pig.removed) return;
@@ -1028,10 +994,10 @@ function explodeBird(world, bird) {
     const impact = 1 - dist / 180;
     const dir = normalize({ x: dx || 1, y: dy || -0.2 });
     Body.applyForce(block.body, block.body.position, {
-      x: dir.x * 0.02 * impact,
-      y: dir.y * 0.02 * impact,
+      x: dir.x * 0.012 * impact,
+      y: dir.y * 0.012 * impact,
     });
-    damageBlock(world, block, 8 * impact);
+    damageBlock(world, block, 5.5 * impact);
   });
   world.pigs.forEach((pig) => {
     if (pig.removed) return;
@@ -1113,8 +1079,8 @@ function handleCollisionPair(world, pair) {
 
     const direction = normalize(sub(other.body.position, bird.body.position));
     Body.applyForce(other.body, other.body.position, {
-      x: direction.x * 0.013 * (bird.type === "black" ? 1.55 : bird.type === "red" ? 1.18 : 1),
-      y: direction.y * 0.013 * (bird.type === "black" ? 1.55 : bird.type === "red" ? 1.18 : 1),
+      x: direction.x * 0.0075 * (bird.type === "black" ? 1.45 : bird.type === "red" ? 1.12 : 1),
+      y: direction.y * 0.0075 * (bird.type === "black" ? 1.45 : bird.type === "red" ? 1.12 : 1),
     });
     bird.impact = true;
     playImpactSound(hitStrength);
@@ -1243,16 +1209,16 @@ function wakeFloatingBlocks(world) {
         if (dir !== 0) {
           block.tipCooldown = Math.max(0, (block.tipCooldown ?? 0) - 1);
           if (block.tipCooldown === 0) {
-            Body.setAngularVelocity(block.body, block.body.angularVelocity + dir * 0.016);
+            Body.setAngularVelocity(block.body, block.body.angularVelocity + dir * 0.009);
             Body.setVelocity(block.body, {
-              x: block.body.velocity.x + dir * 0.045,
-              y: block.body.velocity.y + 0.02,
+              x: block.body.velocity.x + dir * 0.022,
+              y: block.body.velocity.y + 0.01,
             });
             const supportBlock = leftSupport ? leftBlock : rightBlock;
             if (supportBlock && !supportBlock.removed) {
               if (supportBlock.body.isSleeping) Sleeping.set(supportBlock.body, false);
               Body.applyForce(supportBlock.body, supportBlock.body.position, {
-                x: -dir * 0.00002 * supportBlock.body.mass,
+                x: -dir * 0.000009 * supportBlock.body.mass,
                 y: 0,
               });
             }
