@@ -22,6 +22,7 @@ const LAUNCH_SCALE = 0.19;
 const FIXED_STEP_MS = 1000 / 90;
 const MAX_FRAME_DELTA = 1000 / 30;
 const MAX_PHYSICS_STEPS = 4;
+const NOTICE_ACK_KEY = "gravity_birds_notice_1366x768_v1";
 
 function sx(value) {
   return Math.round(value * SCALE_X);
@@ -36,10 +37,43 @@ function ss(value) {
 }
 
 const BIRDS = {
-  red: { label: "Red", color: "#dd594c", outline: "#7f231e", radius: ss(22), desc: "Базовая птица для точного удара." },
-  yellow: { label: "Chuck", color: "#f4c94f", outline: "#8b640b", radius: ss(20), desc: "Быстрее базовой птицы." },
-  blue: { label: "Blues", color: "#6cbef4", outline: "#21547f", radius: ss(18), desc: "Делится на три траектории в полете." },
-  black: { label: "Bomb", color: "#2f2c34", outline: "#b89253", radius: ss(24), desc: "Взрыв по сильному контакту с конструкцией." },
+  red: { label: "Rood", color: "#dd594c", outline: "#7f231e", radius: ss(22), desc: "Basvogel voor nauwkeurige schoten." },
+  yellow: { label: "Chuck", color: "#f4c94f", outline: "#8b640b", radius: ss(20), desc: "Sneller dan de standaardvogel." },
+  blue: { label: "Blues", color: "#6cbef4", outline: "#21547f", radius: ss(18), desc: "Splitst in drie banen tijdens de vlucht." },
+  black: { label: "Bom", color: "#2f2c34", outline: "#b89253", radius: ss(24), desc: "Ontploft bij een harde botsing." },
+};
+
+const STRINGS = {
+  statuses: {
+    aim: "Trek naar achteren en schiet.",
+    nextBird: "Volgende vogel staat klaar.",
+    noBirds: "Geen vogels meer over.",
+    settling: "De laatste instorting komt tot rust...",
+    allCleared: "Alle varkentjes zijn weg.",
+    outOfBirds: "Geen vogels meer.",
+    yellowBoost: "Chuck-versnelling geactiveerd.",
+  },
+  overlay: {
+    retry: { eyebrow: "Opnieuw", title: "Missie mislukt", text: "Start opnieuw en probeer een andere hoek.", button: "Opnieuw" },
+    win: { eyebrow: "Overwinning", title: "Level voltooid", text: "Ga door naar het volgende zwaartekrachtveld.", button: "Doorgaan" },
+    notice: {
+      eyebrow: "Belangrijk",
+      title: "Gebruik een touchpad",
+      text: "Gebruik op deze versie een touchpad of muis. De game werkt niet goed met een touchscreen.",
+      button: "Begrepen",
+    },
+  },
+  ui: {
+    passed: "Voltooid",
+    notCleared: "Nog niet voltooid",
+    level: "Level",
+    acceleration: "zwaartekrachtversnelling omlaag",
+    birdOrder: "Volgorde van vogels",
+    unmute: "Geluid aan",
+    mute: "Dempen",
+    continue: "Doorgaan",
+    restart: "Opnieuw",
+  },
 };
 
 const MATERIALS = {
@@ -51,7 +85,7 @@ const MATERIALS = {
 const BASE_LEVELS = [
   {
     id: 1,
-    planet: "Moon",
+    planet: "Maan",
     gravity: 280,
     birds: ["red", "blue", "yellow", "black"],
     palette: { skyTop: "#0d1731", skyBottom: "#5f89bb", dust: "#e8d0ad" },
@@ -96,7 +130,7 @@ const BASE_LEVELS = [
   },
   {
     id: 3,
-    planet: "Earth",
+    planet: "Aarde",
     gravity: 560,
     birds: ["red", "yellow", "blue", "black", "red"],
     palette: { skyTop: "#255c97", skyBottom: "#b2d8f2", dust: "#e8d6a2" },
@@ -121,7 +155,7 @@ const BASE_LEVELS = [
   },
   {
     id: 4,
-    planet: "Mercury",
+    planet: "Mercurius",
     gravity: 690,
     birds: ["yellow", "blue", "black", "yellow", "red"],
     palette: { skyTop: "#684130", skyBottom: "#eaad71", dust: "#f7d49d" },
@@ -220,6 +254,7 @@ const state = {
   accumulator: 0,
   viewport: { width: window.innerWidth, height: window.innerHeight, scale: 1, offsetX: 0, offsetY: 0 },
   audio: null,
+  overlayAction: null,
 };
 
 function clamp(value, min, max) {
@@ -263,7 +298,7 @@ function ensureAudio() {
   if (!AudioCtx) return null;
   const ctxAudio = new AudioCtx();
   const master = ctxAudio.createGain();
-  master.gain.value = 0.18;
+  master.gain.value = 0.55;
   master.connect(ctxAudio.destination);
   state.audio = { ctx: ctxAudio, master, humTimer: 0, musicTimer: 0, musicStep: 0 };
   applyAudioSettings();
@@ -273,18 +308,20 @@ function ensureAudio() {
 function unlockAudio() {
   const audio = ensureAudio();
   if (!audio) return;
-  if (audio.ctx.state === "suspended") audio.ctx.resume();
+  if (audio.ctx.state === "suspended") {
+    audio.ctx.resume();
+  }
 }
 
 function loadAudioSettings() {
   try {
     const raw = JSON.parse(localStorage.getItem(AUDIO_SETTINGS_KEY) || "{}");
     return {
-      volume: clamp(Number(raw.volume ?? 1), 0, 3),
+      volume: clamp(Number(raw.volume ?? 1.6), 0, 3),
       muted: Boolean(raw.muted),
     };
   } catch {
-    return { volume: 1, muted: false };
+    return { volume: 1.6, muted: false };
   }
 }
 
@@ -295,14 +332,14 @@ function saveAudioSettings(settings) {
 function applyAudioSettings() {
   const settings = loadAudioSettings();
   if (state.audio) {
-    state.audio.master.gain.value = settings.muted ? 0 : 0.18 * settings.volume;
+    state.audio.master.gain.value = settings.muted ? 0 : 0.3 * settings.volume;
   }
   volumeSlider.value = String(Math.round(settings.volume * 100));
   volumeValue.textContent = `${Math.round(settings.volume * 100)}%`;
-  muteBtn.textContent = settings.muted ? "Unmute" : "Mute";
+  muteBtn.textContent = settings.muted ? STRINGS.ui.unmute : STRINGS.ui.mute;
 }
 
-function playTone(freq, duration, type = "triangle", volume = 0.16, slideTo = null) {
+function playTone(freq, duration, type = "triangle", volume = 0.24, slideTo = null) {
   const audio = ensureAudio();
   if (!audio) return;
   if (audio.ctx.state === "suspended") audio.ctx.resume();
@@ -320,23 +357,23 @@ function playTone(freq, duration, type = "triangle", volume = 0.16, slideTo = nu
 }
 
 function playLaunchSound(type) {
-  if (type === "yellow") playTone(260, 0.08, "sine", 0.045, 340);
-  else if (type === "blue") playTone(380, 0.07, "sine", 0.04, 460);
-  else if (type === "black") playTone(150, 0.12, "triangle", 0.05, 110);
-  else playTone(220, 0.08, "triangle", 0.04, 280);
+  if (type === "yellow") playTone(260, 0.08, "sine", 0.11, 340);
+  else if (type === "blue") playTone(380, 0.07, "sine", 0.1, 460);
+  else if (type === "black") playTone(150, 0.12, "triangle", 0.12, 110);
+  else playTone(220, 0.08, "triangle", 0.1, 280);
 }
 
 function playImpactSound(power) {
-  playTone(90 + power * 8, 0.05, "triangle", Math.min(0.05, 0.018 + power * 0.003), 72);
+  playTone(90 + power * 8, 0.06, "triangle", Math.min(0.16, 0.06 + power * 0.004), 72);
 }
 
 function playPigSound() {
-  playTone(300, 0.06, "sine", 0.04, 220);
+  playTone(300, 0.08, "sine", 0.12, 220);
 }
 
 function playWinSound() {
-  playTone(330, 0.1, "triangle", 0.04, 440);
-  setTimeout(() => playTone(440, 0.12, "triangle", 0.04, 560), 80);
+  playTone(330, 0.1, "triangle", 0.12, 440);
+  setTimeout(() => playTone(440, 0.12, "triangle", 0.12, 560), 80);
 }
 
 function updateAmbientAudio(dt) {
@@ -427,21 +464,21 @@ function rebuildLevelCards() {
     card.className = `level-card ${cleared ? "level-card-cleared" : "level-card-pending"}`;
     card.innerHTML = `
       <div class="level-state ${cleared ? "level-state-cleared" : "level-state-pending"}">
-        ${cleared ? "✓ Passed" : "○ Not cleared"}
+        ${cleared ? `✓ ${STRINGS.ui.passed}` : `○ ${STRINGS.ui.notCleared}`}
       </div>
       <div class="level-top">
         <div class="orb" style="background:${level.palette.dust}"></div>
         <div>
-          <div class="eyebrow">Level ${index + 1}</div>
+          <div class="eyebrow">${STRINGS.ui.level} ${index + 1}</div>
           <h3>${level.planet}</h3>
         </div>
       </div>
       <div class="metric">
         <strong>g = ${level.gravity} px/s²</strong>
-        <span>ускорение свободного падения вниз</span>
+        <span>${STRINGS.ui.acceleration}</span>
       </div>
       <div class="metric">
-        <strong>Bird order</strong>
+        <strong>${STRINGS.ui.birdOrder}</strong>
         <span>${level.birds.join(", ")}</span>
       </div>
     `;
@@ -474,11 +511,12 @@ function setMode(mode) {
   canvas.classList.toggle("interactive", mode === "game");
 }
 
-function showOverlay(eyebrow, title, text) {
+function showOverlay(eyebrow, title, text, button, action = null) {
+  state.overlayAction = action;
   overlayEyebrow.textContent = eyebrow;
   overlayTitle.textContent = title;
   overlayText.textContent = text;
-  overlayBtn.textContent = eyebrow === "Retry" ? "Restart" : "Continue";
+  overlayBtn.textContent = button;
   overlay.classList.remove("hidden");
 }
 
@@ -595,7 +633,7 @@ function createWorld(levelIndex) {
     particles: [],
     aiming: false,
     drag: vec(SLING.x, SLING.y),
-    status: "Pull back and fire.",
+    status: STRINGS.statuses.aim,
     outcome: null,
     clearTimer: 0,
     structuresAwake: false,
@@ -623,7 +661,7 @@ function wakeStructures(world) {
 function refreshHud() {
   if (!state.world) return;
   hudLevel.textContent = state.world.level.planet;
-  hudGravity.textContent = `g = ${state.world.level.gravity} px/s², ускорение свободного падения вниз`;
+  hudGravity.textContent = `g = ${state.world.level.gravity} px/s², ${STRINGS.ui.acceleration}`;
   hudStatus.textContent = state.world.status;
   birdStack.innerHTML = "";
   state.world.birdsQueue.forEach((birdType) => {
@@ -1071,7 +1109,7 @@ function updateBirdState(world, dt) {
     bird.removed = true;
     Composite.remove(world.engine.world, bird.body);
     world.activeBird = null;
-    world.status = world.birdsQueue.length ? "Next bird ready." : "No birds left.";
+    world.status = world.birdsQueue.length ? STRINGS.statuses.nextBird : STRINGS.statuses.noBirds;
     refreshHud();
   }
 }
@@ -1181,23 +1219,23 @@ function checkOutcome(world) {
   if (pigsLeft === 0 && !world.outcome) {
     world.clearTimer += world.lastDeltaMs / 1000;
     if (world.clearTimer === world.lastDeltaMs / 1000) {
-      world.status = "Final collapse settling...";
+      world.status = STRINGS.statuses.settling;
       refreshHud();
     }
     if (world.clearTimer > 0.35 && (!hasSceneMotion(world) || world.clearTimer > 0.9)) {
       saveLevelProgress(world.level.id);
       rebuildLevelCards();
       world.outcome = "win";
-      world.status = "All piggies cleared.";
+      world.status = STRINGS.statuses.allCleared;
       refreshHud();
       playWinSound();
-      showOverlay("Victory", "Level cleared", "Continue to the next gravity field.");
+      showOverlay(STRINGS.overlay.win.eyebrow, STRINGS.overlay.win.title, STRINGS.overlay.win.text, STRINGS.overlay.win.button, "next");
     }
   } else if (!world.activeBird && world.extraBirds.length === 0 && !world.birdsQueue.length && !world.outcome) {
     world.outcome = "lose";
-    world.status = "Out of birds.";
+    world.status = STRINGS.statuses.outOfBirds;
     refreshHud();
-    showOverlay("Retry", "Mission failed", "Restart and try a different angle.");
+    showOverlay(STRINGS.overlay.retry.eyebrow, STRINGS.overlay.retry.title, STRINGS.overlay.retry.text, STRINGS.overlay.retry.button, "retry");
   } else {
     world.clearTimer = 0;
   }
@@ -1499,31 +1537,33 @@ function drawBlock(entity) {
 function drawTrajectory() {
   if (!state.world?.aiming) return;
   const world = state.world;
-  const pull = sub(SLING, world.drag);
+  const releasePoint = world.drag;
+  const pull = sub(SLING, releasePoint);
   let velocity = vec(pull.x * LAUNCH_SCALE, pull.y * LAUNCH_SCALE);
   const birdType = world.birdsQueue[0];
   if (birdType === "yellow") velocity = mul(velocity, 1.18);
   if (birdType === "black") velocity = mul(velocity, 0.92);
-  const variants = birdType === "blue" ? [rotate(velocity, -0.16), velocity, rotate(velocity, 0.16)] : [velocity];
+  const variants = birdType === "blue" ? [rotate(velocity, -0.18), velocity, rotate(velocity, 0.18)] : [velocity];
 
   variants.forEach((variant, index) => {
-    const tempBody = Bodies.circle(SLING.x, SLING.y, BIRDS[birdType].radius, {
+    const tempBody = Bodies.circle(releasePoint.x, releasePoint.y, BIRDS[birdType].radius, {
       friction: 0.02,
       restitution: 0.12,
       density: birdType === "black" ? 0.0016 : 0.0011,
       frictionAir: 0.002,
     });
     Body.setVelocity(tempBody, variant);
-    ctx.fillStyle = variants.length === 1 || index === 1 ? "#ffffff" : "#9ee8ff";
-    for (let step = 0; step < 42; step += 1) {
+    ctx.fillStyle = variants.length === 1 ? "#ffffff" : index === 1 ? "#ffffff" : "#8fdcff";
+    for (let step = 0; step < 52; step += 1) {
       tempBody.force.x = 0;
       tempBody.force.y = tempBody.mass * world.engine.gravity.y * world.engine.gravity.scale;
       Body.update(tempBody, FIXED_STEP_MS);
       tempBody.force.x = 0;
       tempBody.force.y = 0;
       ctx.beginPath();
-      ctx.arc(tempBody.position.x, tempBody.position.y, Math.max(2, 5 - step * 0.08), 0, Math.PI * 2);
+      ctx.arc(tempBody.position.x, tempBody.position.y, Math.max(1.5, 5 - step * 0.08), 0, Math.PI * 2);
       ctx.fill();
+      if (tempBody.position.y >= FLOOR_Y || tempBody.position.x < 0 || tempBody.position.x > DESIGN_WIDTH) break;
     }
   });
 }
@@ -1600,7 +1640,7 @@ function onPointerDown(event) {
     const dir = normalize(bird.body.velocity);
     Body.setVelocity(bird.body, add(bird.body.velocity, mul(dir, 5.6)));
     bird.boosted = true;
-    state.world.status = "Chuck boost activated.";
+    state.world.status = STRINGS.statuses.yellowBoost;
     refreshHud();
     return;
   }
@@ -1679,13 +1719,24 @@ function onPointerUp() {
   World.add(state.world.engine.world, bird.body);
   playLaunchSound(type);
   spawnBurst(state.world, releasePoint.x, releasePoint.y, BIRDS[type].color, 6);
-  state.world.status = `${BIRDS[type].label} launched.`;
+  state.world.status = `${BIRDS[type].label} gelanceerd.`;
   refreshHud();
 }
 
 document.getElementById("menuStartBtn").addEventListener("click", (event) => {
   unlockAudio();
   event.stopPropagation();
+  const acknowledged = localStorage.getItem(NOTICE_ACK_KEY) === "1";
+  if (!acknowledged) {
+    showOverlay(
+      STRINGS.overlay.notice.eyebrow,
+      STRINGS.overlay.notice.title,
+      STRINGS.overlay.notice.text,
+      STRINGS.overlay.notice.button,
+      "open-levels"
+    );
+    return;
+  }
   setMode("levels");
 });
 
@@ -1729,10 +1780,17 @@ muteBtn.addEventListener("click", () => {
 overlayBtn.addEventListener("click", () => {
   unlockAudio();
   overlay.classList.add("hidden");
+  if (state.overlayAction === "open-levels") {
+    localStorage.setItem(NOTICE_ACK_KEY, "1");
+    state.overlayAction = null;
+    setMode("levels");
+    return;
+  }
   if (!state.world) return;
   if (state.world.outcome === "win" && state.levelIndex < LEVELS.length - 1) startLevel(state.levelIndex + 1);
   else if (state.world.outcome === "win") setMode("levels");
   else startLevel(state.levelIndex);
+  state.overlayAction = null;
 });
 
 window.addEventListener("resize", resize);

@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="ru">
+<html lang="nl">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -14,17 +14,17 @@
         <div class="hero">
           <div class="hero-copy">
             <p class="eyebrow">Gravity Birds</p>
-            <h1>Slingshot physics with planetary gravity</h1>
+            <h1>Slingerfysica met planetaire zwaartekracht</h1>
             <p class="lede">
-              Большие конструкции, точная линия прицеливания, разные птицы и 5 уровней с собственной гравитацией.
+              Grote constructies, een nauwkeurige richtlijn, verschillende vogels en 5 levels met elk hun eigen zwaartekracht.
             </p>
             <div class="hero-points">
               <span>5 levels</span>
-              <span>4 bird types</span>
-              <span>planet gravity</span>
-              <span>destruction physics</span>
+              <span>4 vogeltypes</span>
+              <span>planetaire zwaartekracht</span>
+              <span>vernietigingsfysica</span>
             </div>
-            <button class="primary-btn" id="menuStartBtn">Play</button>
+            <button class="primary-btn" id="menuStartBtn">Spelen</button>
           </div>
           <div class="hero-preview">
             <div class="preview-card preview-card-large">
@@ -45,10 +45,10 @@
       <section class="screen screen-levels hidden" id="levelScreen">
         <div class="section-head">
           <div>
-            <p class="eyebrow">Mission Select</p>
-            <h2>Choose a gravity field</h2>
+            <p class="eyebrow">Missiekeuze</p>
+            <h2>Kies een zwaartekrachtveld</h2>
           </div>
-          <button class="ghost-btn" id="backToMenuBtn">Back</button>
+          <button class="ghost-btn" id="backToMenuBtn">Terug</button>
         </div>
         <div class="level-grid" id="levelGrid"></div>
       </section>
@@ -56,19 +56,19 @@
       <section class="hud hidden" id="hud">
         <div class="hud-card">
           <span class="hud-label">Level</span>
-          <strong id="hudLevel">Moon</strong>
+          <strong id="hudLevel">Maan</strong>
           <span class="hud-meta" id="hudGravity">g = 280</span>
         </div>
         <div class="hud-card hud-center">
-          <span class="hud-label">Birds</span>
+          <span class="hud-label">Vogels</span>
           <div class="bird-stack" id="birdStack"></div>
         </div>
         <div class="hud-card hud-right">
           <span class="hud-label">Status</span>
-          <strong id="hudStatus">Pull back and fire.</strong>
+          <strong id="hudStatus">Trek naar achteren en schiet.</strong>
           <div class="hud-actions">
-            <button class="ghost-btn ghost-small" id="settingsBtn">Sound</button>
-            <button class="ghost-btn ghost-small" id="restartBtn">Restart</button>
+            <button class="ghost-btn ghost-small" id="settingsBtn">Geluid</button>
+            <button class="ghost-btn ghost-small" id="restartBtn">Opnieuw</button>
           </div>
         </div>
       </section>
@@ -77,26 +77,26 @@
         <div class="settings-card">
           <div class="settings-head">
             <div>
-              <p class="eyebrow">Settings</p>
+              <p class="eyebrow">Instellingen</p>
               <h3>Audio</h3>
             </div>
-            <button class="ghost-btn ghost-small" id="closeSettingsBtn">Close</button>
+            <button class="ghost-btn ghost-small" id="closeSettingsBtn">Sluiten</button>
           </div>
           <label class="slider-wrap" for="volumeSlider">
             <span>Volume</span>
             <input type="range" id="volumeSlider" min="0" max="300" step="1" value="100" />
             <strong id="volumeValue">100%</strong>
           </label>
-          <button class="ghost-btn" id="muteBtn">Mute</button>
+          <button class="ghost-btn" id="muteBtn">Dempen</button>
         </div>
       </section>
 
       <section class="overlay hidden" id="overlay">
         <div class="overlay-card">
-          <p class="eyebrow" id="overlayEyebrow">Victory</p>
-          <h3 id="overlayTitle">Level cleared</h3>
-          <p id="overlayText">Continue to the next level.</p>
-          <button class="primary-btn" id="overlayBtn">Continue</button>
+          <p class="eyebrow" id="overlayEyebrow">Overwinning</p>
+          <h3 id="overlayTitle">Level voltooid</h3>
+          <p id="overlayText">Ga door naar het volgende level.</p>
+          <button class="primary-btn" id="overlayBtn">Doorgaan</button>
         </div>
       </section>
     </div>
