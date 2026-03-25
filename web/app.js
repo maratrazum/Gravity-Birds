@@ -78,8 +78,8 @@ const STRINGS = {
 };
 
 const MATERIALS = {
-  wood: { color: "#b97d4f", outline: "#6b3f20", density: 0.0012, friction: 0.86, restitution: 0.04, hp: 28 },
-  glass: { color: "#9fe7eb", outline: "#4a9bab", density: 0.0008, friction: 0.22, restitution: 0.02, hp: 12 },
+  wood: { color: "#b97d4f", outline: "#6b3f20", density: 0.0012, friction: 0.86, restitution: 0.04, hp: 18 },
+  glass: { color: "#9fe7eb", outline: "#4a9bab", density: 0.0008, friction: 0.22, restitution: 0.02, hp: 9 },
   stone: { color: "#8b97ab", outline: "#586171", density: 0.0026, friction: 0.98, restitution: 0.01, hp: 44 },
   tnt: { color: "#d34b40", outline: "#6b1812", density: 0.0011, friction: 0.74, restitution: 0.02, hp: 7 },
 };
@@ -953,7 +953,13 @@ function getEntity(body) {
 
 function damageBlock(world, entity, amount) {
   if (!entity || entity.removed) return;
-  entity.hp -= amount;
+  const materialMultiplier =
+    entity.material === "wood" ? 1.55 :
+    entity.material === "glass" ? 1.9 :
+    entity.material === "tnt" ? 2.2 :
+    entity.isLever ? 0.9 :
+    1;
+  entity.hp -= amount * materialMultiplier;
   if (entity.hp <= 0) {
     if (entity.material === "tnt") explodeTnt(world, entity);
     else removeBlock(world, entity);
@@ -1068,8 +1074,8 @@ function handleCollisionPair(world, pair) {
   if (bird && other?.kind === "block") {
     wakeStructures(world);
     const speed = length(bird.body.velocity);
-    const hitStrength = speed * (bird.type === "yellow" ? 1.28 : bird.type === "black" ? 1.75 : bird.type === "red" ? 1.12 : 0.96);
-    damageBlock(world, other, hitStrength * 0.52);
+    const hitStrength = speed * (bird.type === "yellow" ? 1.34 : bird.type === "black" ? 1.82 : bird.type === "red" ? 1.2 : 1.02);
+    damageBlock(world, other, hitStrength * 0.72);
 
     const direction = normalize(sub(other.body.position, bird.body.position));
     Body.applyForce(other.body, other.body.position, {
@@ -1095,8 +1101,8 @@ function handleCollisionPair(world, pair) {
   if (aEntity?.kind === "block" && bEntity?.kind === "block") {
     const speed = pair.collision?.depth ? Math.abs(pair.bodyA.speed - pair.bodyB.speed) : 0;
     if (speed > 3.8) {
-      damageBlock(world, aEntity, speed * 0.045);
-      damageBlock(world, bEntity, speed * 0.04);
+      damageBlock(world, aEntity, speed * 0.055);
+      damageBlock(world, bEntity, speed * 0.05);
     }
   }
 }
