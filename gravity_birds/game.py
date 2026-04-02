@@ -39,6 +39,7 @@ COLLISION_FLOOR = 4
 
 @dataclass
 class Particle:
+    # Eenvoudig deeltje voor stof, explosies en vogelsporen.
     x: float
     y: float
     vx: float
@@ -49,6 +50,7 @@ class Particle:
 
 
 class PhysicsEntity:
+    # Basisklasse voor alles wat in de physics-space leeft.
     def __init__(self, game: "GravityBirdsGame", body: pymunk.Body, shape: pymunk.Shape):
         self.game = game
         self.body = body
@@ -92,6 +94,7 @@ class BlockEntity(PhysicsEntity):
         self.hp = MATERIALS[material]["hp"]
 
     def damage(self, amount: float) -> None:
+        # Blokken verliezen hp en vallen uiteen in puin bij nul.
         self.hp -= amount
         if self.hp <= 0:
             self.game.spawn_debris(self.body.position, MATERIALS[self.material]["color"], 8, 70)
@@ -131,6 +134,7 @@ class PigEntity(PhysicsEntity):
         super().update(dt)
         if self.dead:
             return
+        # Aanhoudende druk van boven schakelt het varken uit.
         if self.is_crushed_from_above():
             self.crush_time += dt
             if self.crush_time >= 1.5:
@@ -140,6 +144,7 @@ class PigEntity(PhysicsEntity):
             self.crush_time = 0.0
 
     def is_crushed_from_above(self) -> bool:
+        # Controleert of een blok stabiel op het varken drukt.
         pig_x, pig_y = self.body.position
         pig_top = pig_y - 22
         for entity in self.game.entities:
@@ -194,6 +199,7 @@ class BirdEntity(PhysicsEntity):
         if self.trail_timer >= 0.045 and self.launched:
             self.trail_timer = 0.0
             self.game.spawn_trail(self.body.position, BIRD_DATA[self.bird_type]["color"])
+        # Alleen de primaire blauwe vogel splitst automatisch.
         if self.primary and self.bird_type == "blue" and self.launched and not self.ability_used and self.age > 0.16:
             self.ability_used = True
             self.game.split_blue_bird(self)
@@ -203,6 +209,7 @@ class BirdEntity(PhysicsEntity):
                 self.destroy()
 
     def trigger_special(self) -> None:
+        # De gele vogel krijgt een extra impuls in zijn huidige richting.
         if self.dead or self.ability_used:
             return
         if self.bird_type == "yellow" and self.launched:
@@ -275,6 +282,7 @@ class GravityBirdsGame:
         return pygame.display.set_mode((0, 0), pygame.FULLSCREEN)
 
     def _configure_render_target(self) -> None:
+        # Tekent native of schaalt naar het huidige venster.
         window_w, window_h = self.window.get_size()
         if window_w >= WIDTH and window_h >= HEIGHT:
             left = (window_w - WIDTH) // 2
@@ -293,6 +301,7 @@ class GravityBirdsGame:
             self.present_scaled = True
 
     def window_to_virtual(self, pos: tuple[int, int]) -> tuple[int, int]:
+        # Zet muisposities uit het venster om naar spelcoordinaten.
         if not self.viewport.collidepoint(pos):
             return (-1, -1)
         if not self.present_scaled:
@@ -313,6 +322,7 @@ class GravityBirdsGame:
             self.stars.append((x, y, radius))
 
     def create_level(self, index: int) -> None:
+        # Bouwt een nieuwe pymunk-space en vult die met leveldata.
         level = LEVELS[index]
         self.space = pymunk.Space()
         self.space.gravity = (0, level["gravity"])
@@ -352,6 +362,7 @@ class GravityBirdsGame:
         self.scene = "game"
 
     def register_collisions(self) -> None:
+        # Verbindt collision-types met hun handlers.
         if not self.space:
             return
         self.space.on_collision(COLLISION_BIRD, COLLISION_BLOCK, post_solve=self.on_bird_collision)
@@ -361,6 +372,7 @@ class GravityBirdsGame:
         self.space.on_collision(COLLISION_BLOCK, COLLISION_BLOCK, post_solve=self.on_generic_collision)
 
     def on_generic_collision(self, arbiter: pymunk.Arbiter, _space: pymunk.Space, _data: object) -> None:
+        # Zware botsingen tussen constructiedelen geven blokschade.
         impulse = arbiter.total_impulse.length
         if impulse < 150:
             return
@@ -370,6 +382,7 @@ class GravityBirdsGame:
                 entity.damage(impulse * 0.05)
 
     def on_bird_collision(self, arbiter: pymunk.Arbiter, _space: pymunk.Space, _data: object) -> None:
+        # Vogels delen schade uit en activeren hier hun impactgedrag.
         impulse = arbiter.total_impulse.length
         bird = None
         other = None
@@ -422,6 +435,7 @@ class GravityBirdsGame:
         self.entities.append(PigEntity(self, body, shape))
 
     def launch_bird(self, bird_type: str, pull_vector: pygame.Vector2) -> None:
+        # Zet de trekkracht van de katapult om naar startsnelheid.
         radius = BIRD_DATA[bird_type]["radius"]
         mass = 4.2 if bird_type != "black" else 5.6
         body = pymunk.Body(mass, pymunk.moment_for_circle(mass, 0, radius))
@@ -441,6 +455,7 @@ class GravityBirdsGame:
         self.next_bird_delay = 0.0
 
     def split_blue_bird(self, bird: BirdEntity) -> None:
+        # Maakt twee extra blauwe vogels met een kleine hoekafwijking.
         if bird.dead:
             return
         base_velocity = pygame.Vector2(bird.body.velocity)
@@ -473,6 +488,7 @@ class GravityBirdsGame:
         self.entities.append(clone)
 
     def explode(self, position: pymunk.Vec2d, radius: float, force: float) -> None:
+        # Explosies duwen nabije objecten weg en beschadigen blokken.
         pos = pygame.Vector2(position)
         self.spawn_debris(pos, (255, 184, 110), 20, 180)
         for entity in list(self.entities):
@@ -607,6 +623,7 @@ class GravityBirdsGame:
         if not self.space:
             return
         self.accumulator += dt
+        # Houdt de physics-step vast voor stabiel gedrag.
         while self.accumulator >= PHYSICS_STEP:
             self.space.step(PHYSICS_STEP)
             self.accumulator -= PHYSICS_STEP
@@ -636,6 +653,7 @@ class GravityBirdsGame:
         self.update_particles(dt)
 
     def update_particles(self, dt: float) -> None:
+        # Deeltjes volgen een lichte zwaartekracht en vervagen op tijd.
         alive = []
         gravity = self.space.gravity[1] * 0.15 if self.space else 90
         for particle in self.particles:
@@ -757,6 +775,7 @@ class GravityBirdsGame:
         self.screen.blit(hint, (120, 940))
 
     def draw_game(self) -> None:
+        # Tekent achtergrond, spelwereld, HUD en overlay in vaste volgorde.
         level = LEVELS[self.level_index]
         self.draw_gradient_background(self.palette["top"], self.palette["bottom"])
         pygame.draw.circle(self.screen, self.palette["dust"], (1550, 140), 110)
@@ -832,6 +851,7 @@ class GravityBirdsGame:
         )
 
     def draw_trajectory(self) -> None:
+        # Toont een voorspelling van de baan voordat er gelanceerd wordt.
         if not self.aiming:
             return
         bird_type = self.next_bird_type()
@@ -906,6 +926,7 @@ class GravityBirdsGame:
         self.screen.blit(self.font_body.render(body, True, SUBTLE), (744, 538))
 
     def draw(self) -> None:
+        # Rendert het actieve scherm en schaalt alleen als dat nodig is.
         self.window.fill((6, 10, 18))
         if self.scene == "menu":
             self.draw_menu()
