@@ -60,6 +60,7 @@ class PhysicsEntity:
         shape.entity = self
 
     def update(self, dt: float) -> None:
+        # Ruimt objecten op die ver buiten het speelveld raken.
         if self.body.position.y > HEIGHT + 300 or self.body.position.x > WIDTH + 300:
             self.destroy()
 
@@ -78,6 +79,7 @@ class PhysicsEntity:
 
 
 class BlockEntity(PhysicsEntity):
+    # Fysiek bouwdeel dat schade kan oplopen.
     def __init__(
         self,
         game: "GravityBirdsGame",
@@ -101,6 +103,7 @@ class BlockEntity(PhysicsEntity):
             self.destroy()
 
     def draw(self, surface: pygame.Surface) -> None:
+        # Tekent het blok in lokale ruimte en roteert het daarna mee.
         color = MATERIALS[self.material]["color"]
         outline = MATERIALS[self.material]["outline"]
         cx, cy = self.body.position
@@ -123,6 +126,7 @@ class BlockEntity(PhysicsEntity):
 
 
 class PigEntity(PhysicsEntity):
+    # Doelwit dat alleen verdwijnt bij impact of langdurige druk.
     def __init__(self, game: "GravityBirdsGame", body: pymunk.Body, shape: pymunk.Shape):
         super().__init__(game, body, shape)
         self.crush_time = 0.0
@@ -162,6 +166,7 @@ class PigEntity(PhysicsEntity):
         return False
 
     def draw(self, surface: pygame.Surface) -> None:
+        # Houdt het silhouet bewust simpel en direct leesbaar.
         x, y = map(int, self.body.position)
         pygame.draw.circle(surface, (118, 211, 84), (x, y), 22)
         pygame.draw.circle(surface, (69, 123, 44), (x, y), 22, 3)
@@ -177,6 +182,7 @@ class PigEntity(PhysicsEntity):
 
 
 class BirdEntity(PhysicsEntity):
+    # Vogel met vluchtlogica, trail en optionele speciale vaardigheid.
     def __init__(self, game: "GravityBirdsGame", body: pymunk.Body, shape: pymunk.Shape, bird_type: str, primary: bool):
         super().__init__(game, body, shape)
         self.bird_type = bird_type
@@ -193,6 +199,7 @@ class BirdEntity(PhysicsEntity):
         super().update(dt)
         if self.dead:
             return
+        # Leeftijd en cooldowns sturen abilities en automatisch opruimen.
         self.age += dt
         self.impact_cooldown = max(0.0, self.impact_cooldown - dt)
         self.trail_timer += dt
@@ -221,6 +228,7 @@ class BirdEntity(PhysicsEntity):
                 self.game.spawn_debris(self.body.position, (255, 227, 109), 8, 120)
 
     def draw(self, surface: pygame.Surface) -> None:
+        # Elke vogel deelt dezelfde basisvorm met kleine type-accenten.
         x, y = map(int, self.body.position)
         base = BIRD_DATA[self.bird_type]["color"]
         outline = BIRD_DATA[self.bird_type]["outline"]
@@ -244,6 +252,7 @@ class BirdEntity(PhysicsEntity):
 
 
 class GravityBirdsGame:
+    # Centrale spelklasse voor scenes, physics, input en rendering.
     def __init__(self) -> None:
         pygame.init()
         pygame.display.set_caption("Gravity Birds")
@@ -276,6 +285,7 @@ class GravityBirdsGame:
         self._load_menu_background()
 
     def _create_window(self) -> pygame.Surface:
+        # Fullscreen voor normaal gebruik, vaste grootte voor tests.
         driver = pygame.display.get_driver()
         if driver == "dummy":
             return pygame.display.set_mode((WIDTH, HEIGHT))
@@ -311,9 +321,11 @@ class GravityBirdsGame:
         return (int(rel_x * WIDTH), int(rel_y * HEIGHT))
 
     def get_virtual_mouse_pos(self) -> tuple[int, int]:
+        # Leest de muis altijd in virtuele spelcoordinaten uit.
         return self.window_to_virtual(pygame.mouse.get_pos())
 
     def _load_menu_background(self) -> None:
+        # Bouwt een vaste sterrenhemel op zonder random verschillen.
         self.stars = []
         for index in range(60):
             x = 50 + (index * 97) % (WIDTH - 100)
@@ -340,6 +352,7 @@ class GravityBirdsGame:
         self.next_bird_delay = 0.0
         self.accumulator = 0.0
 
+        # Vloer en zijwanden houden de simulatie binnen veilige grenzen.
         floor = pymunk.Segment(self.space.static_body, (-200, FLOOR_Y), (WIDTH + 200, FLOOR_Y), 16)
         floor.friction = 1.0
         floor.elasticity = 0.0
@@ -350,11 +363,13 @@ class GravityBirdsGame:
         left_wall.friction = right_wall.friction = 1.0
         self.space.add(left_wall, right_wall)
 
+        # Eerst de constructie, daarna de doelwitten.
         for block in level["structures"]:
             self.add_block(block["x"], block["y"], block["w"], block["h"], block["material"])
         for pig_position in level["pigs"]:
             self.add_pig(*pig_position)
 
+        # Het level start in rust tot de eerste vogel impact maakt.
         for entity in self.entities:
             entity.body.sleep()
 
@@ -410,6 +425,7 @@ class GravityBirdsGame:
             bird.destroy()
 
     def add_block(self, x: float, y: float, width: float, height: float, material: str) -> None:
+        # Massa volgt uit formaat en materiaal, zodat steen zwaarder voelt.
         props = MATERIALS[material]
         mass = max(1, width * height * 0.0014 * props["density"])
         moment = pymunk.moment_for_box(mass, (width, height))
@@ -423,6 +439,7 @@ class GravityBirdsGame:
         self.entities.append(BlockEntity(self, body, shape, width, height, material))
 
     def add_pig(self, x: float, y: float) -> None:
+        # Varkens blijven klein en compact zodat de torens leidend zijn.
         mass = 3.4
         radius = 22
         body = pymunk.Body(mass, pymunk.moment_for_circle(mass, 0, radius))
@@ -471,6 +488,7 @@ class GravityBirdsGame:
         self.spawn_debris(origin, (182, 235, 255), 10, 70)
 
     def spawn_clone_bird(self, bird_type: str, position: pygame.Vector2, velocity: pygame.Vector2) -> None:
+        # Klonen zijn lichter en mogen hun vaardigheid niet opnieuw gebruiken.
         radius = 15
         mass = 2.1
         body = pymunk.Body(mass, pymunk.moment_for_circle(mass, 0, radius))
@@ -505,6 +523,7 @@ class GravityBirdsGame:
                 entity.damage(strength * 0.28)
 
     def spawn_debris(self, position: pymunk.Vec2d | pygame.Vector2, color: tuple[int, int, int], count: int, speed: float) -> None:
+        # Gebruikt een vaste spreiding zodat effecten beheerst blijven.
         for index in range(count):
             angle = (math.tau * index / max(1, count)) + (index % 3) * 0.09
             magnitude = speed * (0.35 + (index % 5) * 0.14)
@@ -521,27 +540,34 @@ class GravityBirdsGame:
             )
 
     def spawn_trail(self, position: pymunk.Vec2d, color: tuple[int, int, int]) -> None:
+        # Traildeeltjes bewegen niet zelf; ze vervagen alleen achter de vogel.
         self.particles.append(Particle(float(position.x), float(position.y), 0, 0, 5, color, 0.28))
 
     def cleanup_entities(self) -> None:
+        # Verwijdert objecten die al uit de physics-space zijn gehaald.
         self.entities = [entity for entity in self.entities if not entity.dead]
 
     def next_bird_type(self) -> str | None:
+        # Laat de UI zien welke vogel als volgende klaarstaat.
         return self.birds_queue[0] if self.birds_queue else None
 
     def consume_next_bird(self) -> str | None:
+        # Haalt exact één vogel uit de wachtrij bij een echte lancering.
         return self.birds_queue.pop(0) if self.birds_queue else None
 
     def count_alive_birds(self) -> int:
+        # Telt alleen vogels die nog fysiek actief zijn in de wereld.
         return sum(1 for entity in self.entities if isinstance(entity, BirdEntity) and not entity.dead)
 
     def simulate_seconds(self, seconds: float, dt: float = 1 / 60) -> None:
+        # Hulpfunctie voor tests en snelle simulaties zonder input.
         elapsed = 0.0
         while elapsed < seconds and self.running:
             self.update_game(dt)
             elapsed += dt
 
     def handle_game_click(self, pos: tuple[int, int]) -> None:
+        # Klikken verwerken eerst overlays, dan abilities, dan sling input.
         if self.overlay_state:
             if self.overlay_state == "win":
                 if self.level_index < len(LEVELS) - 1:
@@ -567,6 +593,7 @@ class GravityBirdsGame:
             self.drag_position = pygame.Vector2(pos)
 
     def handle_events(self) -> None:
+        # Centrale invoerroute voor menu, levelselectie en gameplay.
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 self.running = False
@@ -606,6 +633,7 @@ class GravityBirdsGame:
                 self.aiming = False
 
     def handle_level_select_click(self, pos: tuple[int, int]) -> None:
+        # Elke kaart opent direct het gekoppelde level.
         start_x = 170
         card_w = 300
         card_h = 260
@@ -631,10 +659,12 @@ class GravityBirdsGame:
         if self.active_bird and self.active_bird.dead:
             self.active_bird = None
 
+        # Alle entities werken hun eigen gedrag na de physics-step bij.
         for entity in list(self.entities):
             entity.update(dt)
         self.cleanup_entities()
 
+        # Een stilgevallen actieve vogel maakt plaats voor de volgende beurt.
         if self.active_bird and self.active_bird.body.velocity.length < 30 and self.active_bird.age > 1.5:
             self.next_bird_delay += dt
             if self.next_bird_delay > 1.2:
@@ -642,6 +672,7 @@ class GravityBirdsGame:
                 self.active_bird = None
                 self.next_bird_delay = 0.0
 
+        # De overlay verschijnt pas als de toestand echt vaststaat.
         pigs_left = any(isinstance(entity, PigEntity) for entity in self.entities)
         if not pigs_left and not self.overlay_state:
             self.overlay_state = "win"
@@ -667,6 +698,7 @@ class GravityBirdsGame:
         self.particles = alive
 
     def draw_gradient_background(self, top_color: tuple[int, int, int], bottom_color: tuple[int, int, int]) -> None:
+        # Lineaire kleurverloopachtergrond voor menu en levels.
         for y in range(HEIGHT):
             t = y / HEIGHT
             color = (
@@ -677,6 +709,7 @@ class GravityBirdsGame:
             pygame.draw.line(self.screen, color, (0, y), (WIDTH, y))
 
     def draw_menu(self) -> None:
+        # Startscherm met projectuitleg, vogels en duidelijke call-to-action.
         self.draw_gradient_background((9, 14, 32), (43, 84, 132))
         for x, y, radius in self.stars:
             pygame.draw.circle(self.screen, (230, 240, 255), (x, y), radius)
@@ -730,6 +763,7 @@ class GravityBirdsGame:
         self.screen.blit(start_text, start_text.get_rect(center=start_rect.center))
 
     def draw_menu_preview(self) -> None:
+        # Kleine still uit de gameplay om het thema meteen te tonen.
         pygame.draw.circle(self.screen, (235, 208, 140), (1655, 335), 56)
         pygame.draw.rect(self.screen, (126, 90, 60), (1120, 455, 540, 18), border_radius=10)
         pygame.draw.rect(self.screen, (96, 66, 40), (1110, 386, 24, 82), border_radius=8)
@@ -741,6 +775,7 @@ class GravityBirdsGame:
         self.draw_bird_icon("blue", (1128, 344), 0.66)
 
     def draw_level_select(self) -> None:
+        # Laat alle missies tegelijk zien met planeet en zwaartekracht.
         self.draw_gradient_background((18, 20, 38), (76, 58, 78))
         title = self.font_large.render("Select Mission", True, TEXT)
         desc = self.font_body.render("5 симметричных арен. Только гравитация и структура влияют на сложность.", True, SUBTLE)
@@ -800,6 +835,7 @@ class GravityBirdsGame:
             self.draw_overlay()
 
     def draw_slingshot(self) -> None:
+        # Tekent frame, elastieken en pouch op basis van de trekpositie.
         anchor = pygame.Vector2(SLING_ANCHOR)
         pull_pos = self.drag_position if self.aiming else anchor
         wood_dark = (77, 41, 20)
@@ -827,6 +863,7 @@ class GravityBirdsGame:
         pygame.draw.ellipse(self.screen, (96, 56, 31), (pouch.x - 18, pouch.y - 10, 36, 20))
 
     def draw_preview_bird(self) -> None:
+        # Toont de volgende vogel zolang er nog niets actief vliegt.
         bird_type = self.next_bird_type()
         if not bird_type or self.active_bird or self.overlay_state:
             return
@@ -834,6 +871,7 @@ class GravityBirdsGame:
         self.draw_bird_icon(bird_type, pos, 1.0)
 
     def draw_bird_icon(self, bird_type: str, pos: tuple[float, float] | pygame.Vector2, scale: float) -> None:
+        # Herbruikbare vogelweergave voor HUD, menu en slingshot-preview.
         base = BIRD_DATA[bird_type]["color"]
         outline = BIRD_DATA[bird_type]["outline"]
         radius = int(BIRD_DATA[bird_type]["radius"] * scale)
@@ -882,6 +920,7 @@ class GravityBirdsGame:
                 pygame.draw.circle(self.screen, color, point, radius)
 
     def draw_particles(self) -> None:
+        # Deeltjes krijgen alpha op basis van resterende levensduur.
         for particle in self.particles:
             alpha = max(0, min(255, int(255 * min(1.0, particle.life * 1.7))))
             surf = pygame.Surface((int(particle.radius * 4), int(particle.radius * 4)), pygame.SRCALPHA)
@@ -889,6 +928,7 @@ class GravityBirdsGame:
             self.screen.blit(surf, (particle.x - particle.radius * 2, particle.y - particle.radius * 2))
 
     def draw_hud(self, level: dict) -> None:
+        # HUD toont planeetdata, tips en de resterende vogelvolgorde.
         panel = pygame.Surface((520, 142), pygame.SRCALPHA)
         pygame.draw.rect(panel, PANEL, (0, 0, 520, 142), border_radius=24)
         pygame.draw.rect(panel, (255, 255, 255, 55), (0, 0, 520, 142), width=2, border_radius=24)
@@ -912,6 +952,7 @@ class GravityBirdsGame:
         self.screen.blit(status, (1540, 134))
 
     def draw_overlay(self) -> None:
+        # Overlay blokkeert input niet volledig; een klik handelt de volgende stap af.
         overlay = pygame.Surface((WIDTH, HEIGHT), pygame.SRCALPHA)
         overlay.fill((7, 9, 16, 170))
         self.screen.blit(overlay, (0, 0))
@@ -941,6 +982,7 @@ class GravityBirdsGame:
         pygame.display.flip()
 
     def run(self) -> None:
+        # Hoofdlus: input, update en draw in die vaste volgorde.
         while self.running:
             dt = min(0.033, self.clock.tick(FPS) / 1000)
             self.handle_events()
